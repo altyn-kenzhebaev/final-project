@@ -1,5 +1,0 @@
-.gitignore
-.vagrant/*
-ansible/roles/cluster-setup/files/private_key
-ansible/roles/backup-setup/files/authorized_keys
-ansible/roles/backup-client/files/private_key
