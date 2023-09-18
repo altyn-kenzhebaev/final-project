@@ -1,0 +1,27 @@
+resource "wwwdata" {
+  device minor 1;
+  meta-disk internal;
+
+  net {
+    protocol C;
+    allow-two-primaries yes;
+    fencing resource-and-stonith;
+    verify-alg sha1;
+  }
+  handlers {
+    fence-peer "/usr/lib/drbd/crm-fence-peer.9.sh";
+    unfence-peer "/usr/lib/drbd/crm-unfence-peer.9.sh";
+  }
+  on "{{ node1 }}" {
+    disk "/dev/{{ drbd_vg }}/{{ drbd_lv }}";
+    node-id 0;
+  }
+  on "{{ node2 }}" {
+    disk "/dev/{{ drbd_vg }}/{{ drbd_lv }}";
+    node-id 1;
+  }
+  connection {
+    host "{{ node1 }}" address {{ node1_ip }}:7789;
+    host "{{ node2 }}" address {{ node2_ip }}:7789;
+  }
+}

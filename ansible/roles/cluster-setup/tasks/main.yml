@@ -1,0 +1,174 @@
+---
+- name: Setting node1_plug
+  become: false
+  shell: VBoxManage showvminfo "{{ node1 }}" | awk '($1=="UUID:"){print$2}'
+  register: node1_plug_output
+  delegate_to: hosted_machine
+  when:
+    - "ansible_hostname == node1"
+
+- name: Setting node2_plug
+  become: false
+  shell: VBoxManage showvminfo "{{ node2 }}" | awk '($1=="UUID:"){print$2}'
+  register: node2_plug_output
+  delegate_to: hosted_machine
+  when:
+    - "ansible_hostname == node1"
+
+- ansible.builtin.set_fact: node1_plug="{{ node1_plug_output.stdout }}" node2_plug="{{ node2_plug_output.stdout }}"
+  when:
+    - "ansible_hostname == node1"
+
+- name: configure static route on hosted_machine
+  command: "{{ item }}"
+  with_items:
+    - "ip route add {{ localnet }} via {{ frontend_dmz_ip }}"
+  delegate_to: hosted_machine
+  ignore_errors: true
+  when:
+    - "ansible_hostname == node1"
+
+- name: "Add High Availability repo"
+  yum_repository:
+    name: highavailability
+    file: almalinux-highavailability
+    description: AlmaLinux $releasever - HighAvailability
+    mirrorlist: https://mirrors.almalinux.org/mirrorlist/$releasever/highavailability
+    enabled: yes
+    gpgcheck: 1
+    gpgkey: file:///etc/pki/rpm-gpg/RPM-GPG-KEY-AlmaLinux-9
+    metadata_expire: 86400
+
+- name: "Install Pacemaker"
+  yum:
+    name: "{{ packages }}"
+    state: present
+  vars:
+    packages:
+    - pacemaker
+    - pcs
+    - psmisc
+    - policycoreutils-python3
+    - httpd
+
+- name: "Enable  and start Pacemaker"
+  ansible.builtin.systemd:
+    name: pcsd.service
+    enabled: true
+    state: started
+
+- name: "Set password for local hacluster user"
+  user:
+    name: "hacluster"
+    password: "{{ pcm_password | string | password_hash('sha512') }}" 
+    state: present
+    update_password: always
+    create_home: yes
+  notify: "restart pcsd"
+  no_log: true
+
+- name: flush
+  ansible.builtin.meta: flush_handlers
+
+- name: "Allow cluster processes on SELinux"
+  seboolean:
+    name: daemons_enable_cluster_mode
+    state: yes
+    persistent: yes
+
+- name: "Configuring firewall services"
+  firewalld:
+    service: "{{ item }}"
+    permanent: yes
+    state: enabled
+    immediate: yes
+  with_items:
+    - high-availability
+
+- name: "Configuring cluster"
+  command: "{{ item }}"
+  with_items:
+    - "pcs host auth {{ nodelist }} -u hacluster -p {{ pcm_password }}"
+    - "pcs cluster setup {{ cluster_name }} {{ nodelist }}"
+    - "pcs cluster enable --all"
+    - "pcs cluster start --all"
+  when:
+    - "ansible_hostname == node1"
+
+- name: "Install Additional Fence Agent packages"
+  yum:
+    name: "{{ packages }}"
+    state: present
+  vars:
+    packages:
+    - fence-agents-all
+
+- name: "Fetch fence_vbox package"
+  copy:
+    dest: /root/fence-agents-vbox-4.12.1-3.el9.noarch.rpm
+    src: fence-agents-vbox-4.12.1-3.el9.noarch.rpm
+    owner: root
+    group: root
+    mode: 0644
+
+- name: "Install fence_vbox package"
+  ansible.builtin.yum:
+    name: /root/fence-agents-vbox-4.12.1-3.el9.noarch.rpm
+    state: present
+    disable_gpg_check: true
+
+- name: Set up route on eth1
+  template:
+    dest: /etc/sysconfig/network-scripts/route-eth1
+    src: route_eth1.j2
+    owner: root
+    group: root
+    mode: 0644
+  notify: "restart NetworkManager"
+
+- name: flush
+  ansible.builtin.meta: flush_handlers
+
+- name: "Scan for SSH host fingerprint"
+  command:  ssh-keyscan -H "{{ hosted_machine }}"
+
+- name: "Fetch hosted machine private_key"
+  copy:
+    dest: /root/private_key
+    src: private_key
+    owner: root
+    group: root
+    mode: 0400
+
+- name: "Configure fencing nodes"
+  command: "{{ item }}"
+  with_items:
+    - "pcs stonith create st_{{ node1 }} fence_vbox ip={{ hosted_machine }} username=altynbek identity_file=/root/private_key plug={{ node1_plug }} pcmk_host_list={{ node1 }}"
+    - "pcs stonith create st_{{ node2 }} fence_vbox ip={{ hosted_machine }} username=altynbek identity_file=/root/private_key plug={{ node2_plug }} pcmk_host_list={{ node2 }}"
+    - "pcs constraint location st_{{ node1 }} avoids {{ node1 }}"
+    - "pcs constraint location st_{{ node2 }} avoids {{ node2 }}"
+    - "pcs property set stonith-enabled=true"
+  when:
+    - "ansible_hostname == node1"
+
+- name: "Copy httpd conf file"
+  copy:
+    dest: /etc/httpd/conf.d/status.conf
+    src: status.conf
+    owner: root
+    group: root
+    mode: 0644
+
+- name: "Configuring cluster"
+  command: "{{ item }}"
+  with_items:
+    - "pcs resource create ClusterIP ocf:heartbeat:IPaddr2 ip={{ clusterip }} cidr_netmask=24 op monitor interval=30s"
+    - "pcs resource defaults update resource-stickiness=100"
+    - "pcs resource create WebSite ocf:heartbeat:apache configfile=/etc/httpd/conf/httpd.conf statusurl='http://localhost/server-status' op monitor interval=1min"
+    - "pcs resource op defaults update timeout=240s"
+    - "pcs constraint colocation add WebSite with ClusterIP INFINITY"
+    - "pcs constraint order ClusterIP then WebSite"
+    - "pcs constraint location WebSite prefers {{ node2 }}=50"
+  when:
+    - "ansible_hostname == node1"
+...

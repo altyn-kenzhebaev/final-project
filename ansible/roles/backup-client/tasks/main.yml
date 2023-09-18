@@ -1,0 +1,166 @@
+---
+- name: "Add CRB repo"
+  yum_repository:
+    name: crb
+    file: almalinux-crb
+    description: AlmaLinux $releasever - CRB
+    mirrorlist: https://mirrors.almalinux.org/mirrorlist/$releasever/crb
+    enabled: yes
+    gpgcheck: 1
+    gpgkey: file:///etc/pki/rpm-gpg/RPM-GPG-KEY-AlmaLinux-9
+    metadata_expire: 86400
+
+- name: "Install BORGBACKUP package"
+  yum:
+    name: "{{ packages }}"
+    state: present
+  vars:
+    packages:
+    - borgmatic
+    - expect
+
+- name: Create root .ssh folder
+  ansible.builtin.file:
+    path: /root/.ssh
+    state: directory
+    owner: root
+    group: root
+    mode: '0700'
+
+- name: Configure key-pair for ssh connection ID-RSA
+  copy:
+    dest: /root/.ssh/id_rsa
+    src: private_key
+    owner: root
+    group: root
+    mode: 0600
+
+- name: Scan for SSH host keys
+  command:  ssh-keyscan -H "{{ backup_server_ip }}"
+  register: keyscan_output
+
+- name: Create KNOWN_HOST
+  copy:
+    content: "{{keyscan_output.stdout}}"
+    dest: /root/.ssh/known_hosts
+
+- name: Configure BORGMATIC environment step1
+  template:
+    dest: /etc/borg/.borg_env
+    src: .borg_env.j2
+    owner: root
+    group: root
+    mode: 0550
+
+- name: Configure BORGMATIC environment step2
+  ansible.builtin.file:
+    path: /root/.borgmatic
+    state: directory
+    owner: root
+    group: root
+    mode: 0750
+
+- name: Configure BORGMATIC config
+  template:
+    dest: /etc/borgmatic/config.yaml
+    src: config.yaml.j2
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Run expect to create backup repository for remote clients
+  ansible.builtin.shell: |
+    set timeout 300
+    spawn borgmatic rcreate --encryption repokey
+
+    expect "Enter new passphrase: "
+    send "{{ borg_passwd }}\n"
+
+    expect "Enter same passphrase again: "
+    send "{{ borg_passwd }}\n"
+
+    expect "Do you want your passphrase to be displayed for verification? \\\[yN\\\]: "
+    send -- "y\r"
+    
+    expect "lace\\\(s\\\)."
+
+    exit 0
+  args:
+    executable: /usr/bin/expect
+
+- name: Configure BORG as service
+  template:
+    dest: /etc/systemd/system/borgmatic.service
+    src: borgmatic.service.j2
+    owner: root
+    group: root
+    mode: 0644
+  
+- name: Configure BORG as run by timer
+  copy:
+    dest: /etc/systemd/system/borgmatic.timer
+    src: borgmatic.timer
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Enable timer and start borgmatic timer
+  ansible.builtin.systemd:
+    name: borgmatic.timer
+    enabled: true
+    state: started
+    daemon_reload: true
+
+- name: Create Backup client folder
+  ansible.builtin.file:
+    path: /etc/borg/
+    state: directory
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Configure BORG logging
+  copy:
+    dest: /etc/borg/logging.conf
+    src: logging.conf
+    owner: root
+    group: root
+    mode: 0644
+  
+- name: Create log folder
+  ansible.builtin.file:
+    path: /var/log/borg
+    state: directory
+    owner: root
+    group: root
+    mode: '0644'
+  
+- name: Configure BORG logratating
+  copy:
+    dest: /etc/logrotate.d/borg
+    src: borg
+    owner: root
+    group: root
+    mode: 0770
+  notify:
+    - restart logrotate
+
+- name: flush
+  ansible.builtin.meta: flush_handlers
+
+- name: Create backup folder
+  ansible.builtin.file:
+    path: /root/pcs-backups
+    state: directory
+    owner: root
+    group: root
+    mode: '0770'
+  when:
+    - "ansible_hostname == node1"
+
+- name: Start first borg backup
+  ansible.builtin.systemd:
+    name: borgmatic.service
+    state: started
+    enabled: true
+...

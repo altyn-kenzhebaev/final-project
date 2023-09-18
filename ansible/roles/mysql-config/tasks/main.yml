@@ -1,0 +1,68 @@
+---
+- name: "Enable interconnect ports for Mariadb"
+  ansible.posix.firewalld:
+    rich_rule: "{{ item }}" 
+    zone: public
+    permanent: true
+    immediate: true
+    state: enabled
+  with_items:
+    - 'rule family="ipv4" source address="{{ node1_ip }}" port port="3306" protocol="tcp" accept'
+    - 'rule family="ipv4" source address="{{ node2_ip }}" port port="3306" protocol="tcp" accept'
+
+- name: "Install MariaDB packages"
+  yum:
+    name: "{{ packages }}"
+    state: present
+  vars:
+    packages:
+    - mariadb-server
+    - mariadb
+    - python3-PyMySQL
+
+- name: "Start and enable MariaDB"
+  systemd:
+    name: mariadb.service
+    state: started
+    enabled: true
+
+- name: Set root user password
+  mysql_user: 
+    name: root
+    password: "{{ mysql_root_password }}"
+    login_user: root
+    login_unix_socket: /var/lib/mysql/mysql.sock
+
+- name: Create .my.cnf
+  template:
+   src: "client.my.cnf.j2"
+   dest: "/root/.my.cnf"
+   owner: root
+   group: root
+   mode: 0600
+
+- name: Delete anonymous MariaDB user
+  mysql_user: name="" host={{item}} state=absent
+  with_items:
+    - localhost
+    - "{{ansible_nodename}}"
+
+- name: Delete Hostname based MariaDB user
+  mysql_user: name=root host="{{ansible_nodename}}" state=absent
+
+- name: Remove MySQL test database
+  mysql_db: name=test state=absent
+
+- name: Create a new database for Wordpress
+  community.mysql.mysql_db:
+    name: "{{ db_name }}"
+    state: present
+
+- name: Add user account for Wordpress
+  community.mysql.mysql_user:
+    name: "{{ db_user }}"
+    password: "{{ db_user_pass }}"
+    host: "{{ nodes_net }}"
+    state: present
+    priv: "{{ db_name }}.*:ALL"
+...

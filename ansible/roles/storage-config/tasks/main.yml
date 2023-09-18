@@ -1,0 +1,148 @@
+---
+- name: "Add Elrepo gpg key"
+  rpm_key:
+    state: present
+    key: https://www.elrepo.org/RPM-GPG-KEY-elrepo.org
+
+- name: "Install Elrepo"
+  dnf:
+    name: 'https://www.elrepo.org/elrepo-release-9.el9.elrepo.noarch.rpm'
+    state: present
+
+- name: "Add ResilientStorage repo"
+  yum_repository:
+    name: resilientstorage
+    file: almalinux-resilientstorage
+    description: AlmaLinux $releasever - HighAvailability
+    mirrorlist: https://mirrors.almalinux.org/mirrorlist/$releasever/resilientstorage
+    enabled: yes
+    gpgcheck: 1
+    gpgkey: file:///etc/pki/rpm-gpg/RPM-GPG-KEY-AlmaLinux-9
+    metadata_expire: 86400
+
+- name: "Install DRBD packages"
+  yum:
+    name: "{{ packages }}"
+    state: present
+  vars:
+    packages:
+    - kmod-drbd9x
+    - drbd9x-utils
+    - policycoreutils-python-utils
+    - dlm
+    - gfs2-utils
+    - lvm2
+
+# - name: "Fetch SElinux allow policy for DRBD"
+#   copy:
+#     dest: /root/
+#     src: "{{ item }}"
+#     owner: root
+#     group: root
+#     mode: 0644
+#   with_items:
+#     - cluster_drbd.pp
+#     - cluster_drbd.te
+#   tags: 
+#     - selinux_drbd
+
+# - name: "Enable selinux custom policy for DRBD"
+#   command: "{{ item }}"
+#   with_items:
+#     - "semodule -i /root/cluster_drbd.pp"
+#   tags: 
+#    - selinux_drbd
+
+- name: "Configure selinux for DRBD"
+  command: "{{ item }}"
+  with_items:
+    - "semanage permissive -a drbd_t"
+
+- name: "Enable interconnect ports for primary node"
+  ansible.posix.firewalld:
+    rich_rule: 'rule family="ipv4" source address="{{ node2_ip }}" port port="7789" protocol="tcp" accept'
+    zone: public
+    permanent: true
+    immediate: true
+    state: enabled
+  when:
+    - "ansible_hostname == node1"
+
+- name: "Enable interconnect ports for secondary node"
+  ansible.posix.firewalld:
+    rich_rule: 'rule family="ipv4" source address="{{ node1_ip }}" port port="7789" protocol="tcp" accept'
+    zone: public
+    permanent: true
+    immediate: true
+    state: enabled
+  when:
+    - "ansible_hostname == node2"
+
+- name: "Task for creating DRBD volume group with possible sda"
+  community.general.lvg:
+    vg: "{{ drbd_vg }}"
+    pvs: /dev/sda
+  when: ansible_devices.sda.partitions.sda1 is not defined
+
+- name: "Task for creating DRBD volume group with possible sdb"
+  community.general.lvg:
+    vg: "{{ drbd_vg }}"
+    pvs: /dev/sdb
+  when: ansible_devices.sdb.partitions.sdb1 is not defined
+
+- name: "Task for creating DRBD logical volume"
+  community.general.lvol:
+    vg: "{{ drbd_vg }}"
+    lv:  "{{ drbd_lv }}"
+    size: 100%PVS
+    force: yes
+
+- name: "Configure DRBD"
+  template:
+    dest: /etc/drbd.d/wwwdata.res
+    src: wwwdata.res.j2
+    owner: root
+    group: root
+    mode: 0640
+
+- name: "Add the DRBD module and make sure it is loaded after reboots"
+  community.general.modprobe:
+    name: drbd
+    state: present
+    persistent: present
+
+- name: "Initialize DRBD"
+  command: "{{ item }}"
+  throttle: 1
+  with_items:
+    - "drbdadm create-md --force wwwdata"
+    - "drbdadm up wwwdata"
+
+- name: "End initialization of DRBD"
+  command: "{{ item }}"
+  with_items:
+    - "drbdadm primary --force wwwdata"
+  when:
+    - "ansible_hostname == node1"
+
+- name: "Configure cluster for DRBD and GFS"
+  command: "{{ item }}"
+  with_items:
+    - "pcs resource create WebData ocf:linbit:drbd drbd_resource=wwwdata op monitor interval=29s role=Promoted monitor interval=31s role=Unpromoted promotable promoted-max=1 promoted-node-max=1 clone-max=2 clone-node-max=1 notify=true"
+    - "mkfs.gfs2 -p lock_dlm -j 2 -t {{ cluster_name }}:web /dev/{{ drbd_lv }} -O -q"
+    - "pcs resource create WebFS Filesystem device=/dev/{{ drbd_lv }} directory='/var/www/html' fstype='gfs2'"
+    - "pcs constraint colocation add WebFS with Promoted WebData-clone"
+    - "pcs constraint order promote WebData-clone then start WebFS"
+    - "pcs constraint colocation add WebSite with WebFS"
+    - "pcs constraint order WebFS then WebSite"
+    - "pcs resource create dlm ocf:pacemaker:controld op monitor interval=60s"
+    - "pcs resource clone dlm clone-max=2 clone-node-max=1"
+    - "pcs constraint colocation add WebFS with dlm-clone"
+    - "pcs constraint order dlm-clone then WebFS"
+    - "pcs property set no-quorum-policy=freeze"
+    - "pcs resource clone WebFS"
+    - "pcs resource update WebData-clone promoted-max=2"
+    - "pcs resource cleanup"
+  when:
+    - "ansible_hostname == node1"
+...

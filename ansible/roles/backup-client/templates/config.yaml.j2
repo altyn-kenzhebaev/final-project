@@ -1,0 +1,21 @@
+source_directories:
+    - /etc
+{% if ansible_hostname == node1 %}
+    - /root/pcs-backups
+    - /var/www/html
+{% endif %}
+
+repositories:
+    - path: ssh://borg@{{ backup_server_ip }}/var/backup/{{ ansible_hostname }}
+      label: backupserver
+
+{% if ansible_hostname == db_server %}
+mariadb_databases:
+    - name: all
+      options: --defaults-extra-file=/root/.my.cnf
+      list_options: --defaults-extra-file=/root/.my.cnf
+      restore_options: --defaults-extra-file=/root/.my.cnf
+{% endif %}
+
+keep_daily: 2
+

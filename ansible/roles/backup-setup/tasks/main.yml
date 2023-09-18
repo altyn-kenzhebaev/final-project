@@ -1,0 +1,76 @@
+---
+- name: "Install BORGBACKUP package"
+  yum:
+    name: "{{ packages }}"
+    state: present
+  vars:
+    packages:
+    - borgbackup
+    - lvm2
+
+- name: Add the user 'borg' for backup administration
+  ansible.builtin.user:
+    name: borg
+    comment: Backup Administrator
+
+- name: Create .ssh folder
+  ansible.builtin.file:
+    path: /home/borg/.ssh/
+    state: directory
+    owner: borg
+    group: borg
+    mode: 0700
+
+- name: Configure key-pair for ssh connection
+  copy:
+    dest: /home/borg/.ssh/authorized_keys
+    src: authorized_keys
+    owner: borg
+    group: borg
+    mode: 0600
+
+- name: Create Backup folder for mount
+  ansible.builtin.file:
+    path: /var/backup/
+    state: directory
+    mode: 0750
+
+- name: "Task for creating DRBD volume group with possible sda"
+  community.general.lvg:
+    vg: "{{ borg_vg }}"
+    pvs: /dev/sda
+  when: ansible_devices.sda.partitions.sda1 is not defined
+
+- name: "Task for creating DRBD volume group with possible sdb"
+  community.general.lvg:
+    vg: "{{ borg_vg }}"
+    pvs: /dev/sdb
+  when: ansible_devices.sdb.partitions.sdb1 is not defined
+
+- name: "Task for creating DRBD logical volume"
+  community.general.lvol:
+    vg: "{{ borg_vg }}"
+    lv:  "{{ borg_lv }}"
+    size: 100%PVS
+    force: yes
+
+- name: Create a xfs filesystem on borg_lv
+  community.general.filesystem:
+    fstype: xfs
+    dev: "/dev/{{ borg_vg }}/{{ borg_lv }}"
+
+- name: Mount a volume
+  ansible.posix.mount:
+    path: /var/backup
+    src: "/dev/{{ borg_vg }}/{{ borg_lv }}"
+    state: mounted
+    fstype: xfs
+
+- name: Change ownership of mountpoint folder
+  ansible.builtin.file:
+    path: /var/backup/
+    state: directory
+    owner: borg
+    group: borg
+    mode: 0750
+...

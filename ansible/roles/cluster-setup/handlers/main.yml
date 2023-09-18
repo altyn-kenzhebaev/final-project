@@ -1,0 +1,13 @@
+---
+- name: "restart pcsd"
+  systemd:
+    name: pcsd.service
+    state: restarted
+  throttle: 1
+  
+- name: "restart NetworkManager"
+  systemd:
+    name: NetworkManager.service
+    state: restarted
+  throttle: 1
+...

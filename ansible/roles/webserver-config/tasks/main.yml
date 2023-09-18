@@ -1,0 +1,91 @@
+---
+- name: "Install PHP"
+  yum:
+    name: "{{ packages }}"
+    state: present
+  vars:
+    packages:
+    - php
+    - php-curl
+    - php-bcmath
+    - php-gd
+    - php-soap
+    - php-zip
+    - php-curl
+    - php-mbstring
+    - php-mysqlnd
+    - php-gd
+    - php-xml
+    - php-intl
+    - php-zip
+
+- name: "Enable and start php-fpm"
+  ansible.builtin.systemd:
+    name: php-fpm.service
+    enabled: true
+    state: started
+
+- name: Allow Apache to listen on tcp port
+  community.general.seport:
+    ports: "{{ backend_port }}"
+    proto: tcp
+    setype: http_port_t
+    state: present
+
+- name: Configuring firewall services
+  ansible.posix.firewalld:
+    port: "{{ backend_port }}/tcp"
+    permanent: true
+    immediate: true
+    state: enabled
+
+- name: Unarchive a Wordress that needs to be downloaded
+  ansible.builtin.unarchive:
+    src: https://wordpress.org/latest.zip
+    dest: /var/www/html
+    remote_src: yes
+    owner: apache
+    group: apache
+    setype: httpd_sys_rw_content_t
+  when:
+    - "ansible_hostname == node1"
+
+- name: "Allow httpd to connect remote database on SELinux"
+  seboolean:
+    name: httpd_can_network_connect_db
+    state: yes
+    persistent: yes
+
+- name: "Configure Wordpress"
+  template:
+    dest: /var/www/html/wordpress/wp-config.php
+    src: wp-config.php.j2
+    owner: apache
+    group: apache
+    mode: 0666
+  when:
+    - "ansible_hostname == node1"
+
+- name: "Configure Apache httpd"
+  template:
+    dest: /etc/httpd/conf/httpd.conf
+    src: httpd.conf.j2
+    owner: root
+    group: root
+    mode: 0644
+
+- name: "Configure Apache for Wordpress"
+  template:
+    dest: /etc/httpd/conf.d/wordpress.conf
+    src: wordpress.conf.j2
+    owner: root
+    group: root
+    mode: 0644
+
+- name: "Restart WebSite"
+  command: "{{ item }}"
+  with_items:
+    - "pcs resource restart WebSite"
+  when:
+    - "ansible_hostname == node1"
+...

@@ -1,0 +1,40 @@
+---
+- name: "Install epel-release"
+  yum:
+    name: "{{ packages }}"
+    state: present
+  vars:
+    packages:
+    - epel-release
+
+- name: "Set timezone"
+  timezone:
+    name: "{{ ntp_timezone }}"
+
+- name: "Force timesync with chrony"
+  shell: "chronyc -a makestep"
+
+- name: "Enable and start firewalld"
+  systemd:
+    name: firewalld
+    state: started
+    enabled: true
+
+- name: "Configuring firewall services"
+  firewalld:
+    service: "{{ item }}"
+    permanent: yes
+    state: disabled
+    immediate: yes
+  with_items:
+    - "cockpit"
+    - "dhcpv6-client"
+
+- name: "Configure hosts file"
+  template:
+    dest: /etc/hosts
+    src: hosts.j2
+    owner: root
+    group: root
+    mode: 0644
+...
