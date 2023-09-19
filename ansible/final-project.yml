@@ -1,4 +1,11 @@
 ---
+- name: "Generating vars and passwords for final-project"
+  hosts: hosted_machine
+  become: true
+  roles:
+    - gen-vars
+  tags: gen-vars
+
 - name: "Install and configure hosts"
   hosts: final_project_hosts
   become: true

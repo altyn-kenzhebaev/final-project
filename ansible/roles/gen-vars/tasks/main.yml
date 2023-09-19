@@ -1,0 +1,52 @@
+---
+- name: Setting node1_plug
+  become: false
+  shell: VBoxManage showvminfo "{{ node1 }}" | awk '($1=="UUID:"){print$2}'
+  register: node1_plug_output
+
+- name: Setting node2_plug
+  become: false
+  shell: VBoxManage showvminfo "{{ node2 }}" | awk '($1=="UUID:"){print$2}'
+  register: node2_plug_output
+
+- name: configure static route on hosted_machine
+  command: "{{ item }}"
+  with_items:
+    - "ip route add {{ localnet }} via {{ frontend_dmz_ip }}"
+  ignore_errors: true
+
+- name: generating passwords for final-project
+  ansible.builtin.set_fact:
+    node1_plug: "{{ node1_plug_output.stdout }}"
+    node2_plug: "{{ node2_plug_output.stdout }}"
+    pcm_password: "{{ lookup('ansible.builtin.password', '/dev/null', chars=['ascii_letters', 'digits', 'punctuation'], length=20) }}"
+    mysql_root_password: "{{ lookup('ansible.builtin.password', '/dev/null', chars=['ascii_letters', 'digits', 'punctuation'], length=20) }}"
+    db_user_pass: "{{ lookup('ansible.builtin.password', '/dev/null', chars=['ascii_letters', 'digits', 'punctuation'], length=20) }}"
+    borg_passwd: "{{ lookup('ansible.builtin.password', '/dev/null', chars=['ascii_letters', 'digits', 'punctuation'], length=20) }}"
+    auth_key: "{{ lookup('ansible.builtin.password', '/dev/null', chars=['ascii_letters', 'digits', 'punctuation'], length=64) }}"
+    secure_auth_key: "{{ lookup('ansible.builtin.password', '/dev/null', chars=['ascii_letters', 'digits', 'punctuation'], length=64) }}"
+    logged_in_key: "{{ lookup('ansible.builtin.password', '/dev/null', chars=['ascii_letters', 'digits', 'punctuation'], length=64) }}"
+    nonce_key: "{{ lookup('ansible.builtin.password', '/dev/null', chars=['ascii_letters', 'digits', 'punctuation'], length=64) }}"
+    auth_salt: "{{ lookup('ansible.builtin.password', '/dev/null', chars=['ascii_letters', 'digits', 'punctuation'], length=64) }}"
+    secure_auth_salt: "{{ lookup('ansible.builtin.password', '/dev/null', chars=['ascii_letters', 'digits', 'punctuation'], length=64) }}"
+    logged_in_salt: "{{ lookup('ansible.builtin.password', '/dev/null', chars=['ascii_letters', 'digits', 'punctuation'], length=64) }}"
+    nonce_salt: "{{ lookup('ansible.builtin.password', '/dev/null', chars=['ascii_letters', 'digits', 'punctuation'], length=64) }}"
+
+- name: Prompt vars
+  debug:
+    msg:
+      - "{{ node1_plug }}"
+      - "{{ node2_plug }}"
+      - "{{ pcm_password }}"
+      - "{{ mysql_root_password }}"
+      - "{{ db_user_pass }}"
+      - "{{ borg_passwd }}"
+      - "{{ auth_key }}"
+      - "{{ secure_auth_key }}"
+      - "{{ logged_in_key }}"
+      - "{{ nonce_key }}"
+      - "{{ auth_salt }}"
+      - "{{ secure_auth_salt }}"
+      - "{{ logged_in_salt }}"
+      - "{{ nonce_salt }}"
+...

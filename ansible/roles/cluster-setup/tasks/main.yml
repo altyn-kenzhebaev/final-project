@@ -1,32 +1,32 @@
 ---
-- name: Setting node1_plug
-  become: false
-  shell: VBoxManage showvminfo "{{ node1 }}" | awk '($1=="UUID:"){print$2}'
-  register: node1_plug_output
-  delegate_to: hosted_machine
-  when:
-    - "ansible_hostname == node1"
+# - name: Setting node1_plug
+#   become: false
+#   shell: VBoxManage showvminfo "{{ node1 }}" | awk '($1=="UUID:"){print$2}'
+#   register: node1_plug_output
+#   delegate_to: hosted_machine
+#   when:
+#     - "ansible_hostname == node1"
 
-- name: Setting node2_plug
-  become: false
-  shell: VBoxManage showvminfo "{{ node2 }}" | awk '($1=="UUID:"){print$2}'
-  register: node2_plug_output
-  delegate_to: hosted_machine
-  when:
-    - "ansible_hostname == node1"
+# - name: Setting node2_plug
+#   become: false
+#   shell: VBoxManage showvminfo "{{ node2 }}" | awk '($1=="UUID:"){print$2}'
+#   register: node2_plug_output
+#   delegate_to: hosted_machine
+#   when:
+#     - "ansible_hostname == node1"
 
-- ansible.builtin.set_fact: node1_plug="{{ node1_plug_output.stdout }}" node2_plug="{{ node2_plug_output.stdout }}"
-  when:
-    - "ansible_hostname == node1"
+# - ansible.builtin.set_fact: node1_plug="{{ node1_plug_output.stdout }}" node2_plug="{{ node2_plug_output.stdout }}"
+#   when:
+#     - "ansible_hostname == node1"
 
-- name: configure static route on hosted_machine
-  command: "{{ item }}"
-  with_items:
-    - "ip route add {{ localnet }} via {{ frontend_dmz_ip }}"
-  delegate_to: hosted_machine
-  ignore_errors: true
-  when:
-    - "ansible_hostname == node1"
+# - name: configure static route on hosted_machine
+#   command: "{{ item }}"
+#   with_items:
+#     - "ip route add {{ localnet }} via {{ frontend_dmz_ip }}"
+#   delegate_to: hosted_machine
+#   ignore_errors: true
+#   when:
+#     - "ansible_hostname == node1"
 
 - name: "Add High Availability repo"
   yum_repository:
@@ -70,6 +70,14 @@
 - name: flush
   ansible.builtin.meta: flush_handlers
 
+- name: Create hacluster cred file
+  copy:
+    content: "{{ pcm_password }}"
+    dest: /root/hacluster_creds
+    owner: root
+    group: root
+    mode: 0400
+
 - name: "Allow cluster processes on SELinux"
   seboolean:
     name: daemons_enable_cluster_mode
@@ -88,8 +96,8 @@
 - name: "Configuring cluster"
   command: "{{ item }}"
   with_items:
-    - "pcs host auth {{ nodelist }} -u hacluster -p {{ pcm_password }}"
-    - "pcs cluster setup {{ cluster_name }} {{ nodelist }}"
+    - "pcs host auth {{ node1 }} {{ node2 }} -u hacluster -p {{ pcm_password }}"
+    - "pcs cluster setup {{ cluster_name }} {{ node1 }} {{ node2 }}"
     - "pcs cluster enable --all"
     - "pcs cluster start --all"
   when:
