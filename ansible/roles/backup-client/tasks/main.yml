@@ -45,14 +45,6 @@
     dest: /root/.ssh/known_hosts
 
 - name: Configure BORGMATIC environment step1
-  template:
-    dest: /etc/borg/.borg_env
-    src: .borg_env.j2
-    owner: root
-    group: root
-    mode: 0550
-
-- name: Configure BORGMATIC environment step2
   ansible.builtin.file:
     path: /root/.borgmatic
     state: directory
@@ -118,6 +110,14 @@
     owner: root
     group: root
     mode: 0644
+
+- name: Configure BORGMATIC environment step2
+  template:
+    dest: /etc/borg/.borg_env
+    src: .borg_env.j2
+    owner: root
+    group: root
+    mode: 0550
 
 - name: Configure BORG logging
   copy:

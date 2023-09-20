@@ -1,24 +1,27 @@
 hosted_machine ansible_connection=local remote_user=altynbek ansible_private_key_file=/home/altynbek/.ssh/id_rsa
 
 [frontend]
-nginx ansible_host=127.0.0.1 ansible_port=2202 ansible_private_key_file=/home/altynbek/Otus-homeworks/final-project/.vagrant/machines/nginx/virtualbox/private_key list_backup="/etc"
+nginx ansible_host=127.0.0.1 ansible_port=2222 ansible_private_key_file=/home/altynbek/Otus-homeworks/final-project/.vagrant/machines/nginx/virtualbox/private_key list_backup="/etc"
 
 [db]
 mysql ansible_host=127.0.0.1 ansible_port=2200 ansible_private_key_file=/home/altynbek/Otus-homeworks/final-project/.vagrant/machines/mysql/virtualbox/private_key list_backup="/etc"
 
 [backend]
-pcmk1 ansible_host=127.0.0.1 ansible_port=2222 ansible_private_key_file=/home/altynbek/Otus-homeworks/final-project/.vagrant/machines/pcmk1/virtualbox/private_key list_backup="/etc /var/www/html/wordpress"
-pcmk2 ansible_host=127.0.0.1 ansible_port=2201 ansible_private_key_file=/home/altynbek/Otus-homeworks/final-project/.vagrant/machines/pcmk2/virtualbox/private_key list_backup="/etc"
+pcmk1 ansible_host=127.0.0.1 ansible_port=2201 ansible_private_key_file=/home/altynbek/Otus-homeworks/final-project/.vagrant/machines/pcmk1/virtualbox/private_key list_backup="/etc /var/www/html/wordpress"
+pcmk2 ansible_host=127.0.0.1 ansible_port=2202 ansible_private_key_file=/home/altynbek/Otus-homeworks/final-project/.vagrant/machines/pcmk2/virtualbox/private_key list_backup="/etc"
 
 [final_project_hosts:children]
 frontend
 db
 backend
 
-[backup_clients:children]
+[client_servers:children]
 frontend
 db
 backend
 
 [backup_servers:children]
 db
+
+[mon_servers:children]
+frontend

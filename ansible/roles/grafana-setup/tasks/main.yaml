@@ -1,0 +1,22 @@
+---
+- name: "Fetch grafana package"
+  copy:
+    dest: /root/grafana-enterprise-10.1.2-1.x86_64.rpm
+    src: grafana-enterprise-10.1.2-1.x86_64.rpm
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Install grafana
+  yum:
+    name: /root/grafana-enterprise-10.1.2-1.x86_64.rpm
+    disable_gpg_check: true
+    state: latest
+
+- name: "Grafana systemd"
+  service:
+    name: grafana-server
+    enabled: true
+    state: started
+
+...

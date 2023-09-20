@@ -1,52 +1,53 @@
 ---
 - name: "Generating vars and passwords for final-project"
-  hosts: hosted_machine
+  hosts: all
   become: true
   roles:
     - gen-vars
   tags: gen-vars
 
-- name: "Install and configure hosts"
-  hosts: final_project_hosts
-  become: true
-  roles:
-    - host-preparation
-  tags: host-preparation
+# - name: "Install and configure hosts"
+#   hosts: final_project_hosts
+#   become: true
+#   roles:
+#     - host-preparation
+#   tags: host-preparation
 
-- name: "Install and configure NGINX Server"
-  hosts: frontend
-  become: true
-  roles:
-    - nginx-setup
-  tags: nginx-setup
+# - name: "Install and configure Mariadb Server"
+#   hosts: db
+#   become: true
+#   roles:
+#     - mysql-config
+#     - backup-setup
+#   tags: mysql-config
 
-- name: "Install and configure Mariadb Server"
-  hosts: db
-  become: true
-  roles:
-    - mysql-config
-  tags: mysql-config
+# - name: Install Prometheus monitoring and alerting server
+#   hosts: nginx
+#   become: true
+#   roles:
+#     - nginx-setup
+#     - prometheus.prometheus.prometheus
+#     - prometheus.prometheus.alertmanager
+#     - grafana-setup
+#   tags: frontend_servers
 
-- name: "Install and configure Cluster software, Active/Active Storage, Backend for Wordpress"
-  hosts: backend
-  become: true
-  roles:
-    - cluster-setup
-    - storage-config
-    - webserver-config
-  tags: beckend-setup
-
-- name: "Install and configure BackupServer"
-  hosts: backup_servers
-  become: true
-  roles:
-    - backup-setup
-  tags: backup-setup
+# - name: "Install and configure Cluster software, Active/Active Storage, Backend for Wordpress"
+#   hosts: backend
+#   become: true
+#   roles:
+#     - cluster-setup
+#     - storage-config
+#     - webserver-config
+#   tags: beckend-setup
 
 - name: "Install and configure servers for BackupClient"
-  hosts: backup_clients
+  hosts: client_servers
   become: true
   roles:
     - backup-client
-  tags: backup-client
+    - prometheus.prometheus.node_exporter
+  tags: client_servers
+
+
+
 ...

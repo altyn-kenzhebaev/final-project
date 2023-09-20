@@ -7,8 +7,8 @@ MACHINES = {
         :box_name => "almalinux/9",
         :ip_addr => '192.168.50.100',
         :net_adp => 3,
-        :cpus => 1,
-        :memory => 768,
+        :cpus => 2,
+        :memory => 1024,
         :nets => {
             :net2 => {
               :ip => '10.10.0.10',
@@ -25,7 +25,7 @@ MACHINES = {
         :disks => {
           :sata1 => {
               :dfile => home + '/VirtualBox VMs/mysql/sata1.vdi',
-              :size => 1024,
+              :size => 768,
               :port => 1
           },
       },

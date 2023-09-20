@@ -1,5 +1,5 @@
 ntp_timezone: "Asia/Bishkek"
-#pcm_password: "strong_pass"
+
 cluster_name: "myhacluster"
 localnet: "10.10.0.0/24"
 node1: "pcmk1"
@@ -11,25 +11,40 @@ clusterip: "10.10.0.120"
 hosted_machine: "192.168.50.1"
 db_server: "mysql"
 mysql_ip: "10.10.0.110"
-#mysql_root_password: "vagrant"
+
 db_name: "wordpress_db"
 db_user: "wordpress_user"
-#db_user_pass: "PaSSw0rd"
+
 drbd_vg: "drbd-vg01"
 drbd_lv: "drbd1"
-#auth_key: "/gTeH%tCw&_.t>yz]s&|X?k*){&Vl>d0a6|ve`J^SK:IkF`mmgeOIOrN(49M,yvG" 
-#secure_auth_key: "b{W_B2G @x+;WX_?;aI#XESfwK7W9 a$U4I*<4}qj9{n~j`y]!UT`/ivb}^Sw_fi"
-#logged_in_key: "(9t:y1@;w! KZ^:qz6j }pd_-XUto7_ jjY;1tXas.WTSxp`Kd5vVbyAYBw3jr`U"
-#nonce_key: "7%DRFRyONo$cl9Ix(8ifYus`ac6BoIq+1MJ{3(rhI~G{oemB8=Dao8x$?wl-kz)V"
-#auth_salt: "mF5}%C8M]X@p;$6/Ua*<u~+d1CGbxf*r7EngzX;tpE~I70.tGHcZO)VPDP!^i/ A"
-#secure_auth_salt: "N=-%Vob`QQdT()MO+9C;:D1T%g6R<90g;a;Jn@^3IH;G-pF8Bg^;}6XkOp,Ic^9O"
-#logged_in_salt: "`yJgo5#m0*:o/f/j|F,MRG_:Cmog:`;Zl}S`J&_29_9?]RZ1ru1Phf9elflP7:uL"
-#nonce_salt: ")k/T?7Mq;9@&rb?Ex:e~?NN}JagAkdTe;Ew/#I!nXDie7D|B@PkLn oLBh#|*6+n"
+
 frontend_loc_ip: "10.10.0.10"
 frontend_dmz_ip: "192.168.50.100"
 frontend: "nginx"
 backend_port: "9000"
 backup_server_ip: "10.10.0.110"
-#borg_passwd: "strong_pass"
+
 borg_vg: "borg_vg01"
 borg_lv: "borg_lv01"
+prometheus_targets:
+  node:
+  - targets:
+    - "{{ frontend }}:9100"
+    - "{{ db_server }}:9100"
+    - "{{ node1 }}:9100"
+    - "{{ node2 }}:9100"
+    labels:
+      env: final-project
+alertmanager_route:
+  receiver: stardata-telegram
+  routes:
+    - receiver: stardata-telegram
+      match:
+        severity: test-telegram
+alertmanager_receivers:
+  - name: 'stardata-telegram'
+    telegram_configs:
+      - bot_token: 6115317598:AAGM-STQCCGg8mnYh8p0P78U0EIOVuYDKxQ
+        api_url: https://api.telegram.org
+        chat_id: 5157512311
+        parse_mode: ''

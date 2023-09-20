@@ -37,4 +37,14 @@
     owner: root
     group: root
     mode: 0644
+
+- name: "Enable interconnect ports for Prometheus server"
+  ansible.posix.firewalld:
+    rich_rule: 'rule family="ipv4" source address="{{ frontend_loc_ip }}" port port="9100" protocol="tcp" accept'
+    zone: public
+    permanent: true
+    immediate: true
+    state: enabled
+  when:
+    - "ansible_hostname != frontend"
 ...
