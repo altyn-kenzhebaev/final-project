@@ -28,7 +28,7 @@
     state: started
     enabled: true
 
-- name: "Configuring firewall services"
+- name: "Configuring firewall services step 1"
   firewalld:
     service: "{{ item }}"
     permanent: yes
@@ -36,6 +36,19 @@
     immediate: yes
   with_items:
     - "http"
+
+- name: "Configuring firewall services step 2"
+  ansible.posix.firewalld:
+    port: "{{ item }}"
+    permanent: true
+    state: enabled
+    immediate: yes
+  with_items:
+    - 9090/tcp
+    - 9093/tcp
+    - 3000/tcp
+  tags:
+    - firew_config
 
 - name: Set up forward packages across routers
   sysctl:
