@@ -1,0 +1,115 @@
+---
+- name: "Add Elasticsearch repository for 8.x packages"
+  yum_repository:
+    name: elasticsearch
+    file: elasticsearch
+    description: Elasticsearch repository for 8.x packages
+    baseurl: https://artifacts.elastic.co/packages/8.x/yum
+    enabled: yes
+    gpgcheck: 0
+
+- name: "Fetch ELK package"
+  copy:
+    dest: /root/
+    src: "{{ item }}"
+    owner: root
+    group: root
+    mode: 0644
+  with_items:
+    - elasticsearch-8.10.1-x86_64.rpm
+    - logstash-8.10.1-x86_64.rpm
+
+- name: Install ELK
+  yum:
+    name: "{{ item }}"
+    disable_gpg_check: true
+    state: present
+  with_items:
+   - /root/elasticsearch-8.10.1-x86_64.rpm
+   - /root/logstash-8.10.1-x86_64.rpm
+
+- name: "Configure ELK"
+  template:
+    dest: /etc/elasticsearch/elasticsearch.yml
+    src: elasticsearch.yml.j2
+    owner: root
+    group: root
+    mode: 0644
+  notify:
+    - restart elasticsearch
+
+- name: "ELK systemd"
+  service:
+    name: "{{ item }}"
+    enabled: true
+    state: started
+  with_items:
+    - elasticsearch
+
+- name: Reset elastic password
+  shell: /usr/share/elasticsearch/bin/elasticsearch-reset-password -u elastic -b
+  register: reset_passwd_out
+
+- name: Setting password to variable
+  ansible.builtin.set_fact:
+    elastic_passwd: "{{ reset_passwd_out.stdout | regex_replace('.*\n.*value\\: ', '') }}"
+
+- name: Create elastic_passwd cred file
+  copy:
+    content: "{{ elastic_passwd }}"
+    dest: /root/elastic_passwd
+    owner: root
+    group: root
+    mode: 0400
+
+- name: "Configure Logstash"
+  template:
+    dest: /etc/logstash/conf.d/logstash.conf
+    src: logstash.conf.j2
+    owner: root
+    group: root
+    mode: 0644
+  notify:
+    - restart logstash
+
+- name: "Logstash systemd"
+  service:
+    name: "{{ item }}"
+    enabled: true
+    state: started
+  with_items:
+    - logstash
+
+- name: "Configuring firewall for ELK ans Logstash"
+  ansible.posix.firewalld:
+    port: "{{ item }}"
+    permanent: true
+    state: enabled
+    immediate: yes
+  with_items:
+    - 9200/tcp
+    - 10514/udp
+    - 514/tcp
+    - 514/udp
+
+- name: Configure RSYSLOG to recieve logs
+  copy:
+    dest: /etc/rsyslog.conf
+    src: rsyslog.conf
+    owner: root
+    group: root
+    mode: 0644
+  notify:
+    - restart rsyslog
+
+- name: Configure auditd to recieve audit logs
+  copy:
+    dest: /etc/audit/auditd.conf
+    src: auditd.conf
+    owner: root
+    group: root
+    mode: 0640
+  notify:
+    - restart auditd
+
+...

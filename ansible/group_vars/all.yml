@@ -12,6 +12,9 @@ hosted_machine: "192.168.50.1"
 db_server: "mysql"
 mysql_ip: "10.10.0.110"
 
+syslog_server: "syslog"
+syslog_ip: "10.10.0.200"
+
 db_name: "wordpress_db"
 db_user: "wordpress_user"
 
@@ -33,6 +36,7 @@ prometheus_targets:
     - "{{ db_server }}:9100"
     - "{{ node1 }}:9100"
     - "{{ node2 }}:9100"
+    - "{{ syslog_server }}:9100"
     labels:
       env: final-project
 alertmanager_route:

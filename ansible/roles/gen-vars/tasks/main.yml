@@ -28,8 +28,8 @@
     pcm_password: "{{ lookup('ansible.builtin.password', '/tmp/final-project/pcm_password', chars=['ascii_letters', 'digits', 'punctuation'], length=20) }}"
     mysql_root_password: "{{ lookup('ansible.builtin.password', '/tmp/final-project/mysql_root_password', chars=['ascii_letters', 'digits', 'punctuation'], length=20) }}"
     db_user_pass: "{{ lookup('ansible.builtin.password', '/tmp/final-project/db_user_pass', chars=['ascii_letters', 'digits', 'punctuation'], length=20) }}"
-    borg_passwd: "{{ lookup('ansible.builtin.password', '/tmp/final-project/borg_passwd', chars=['ascii_letters', 'digits', 'punctuation'], length=20) }}"
-    grafana_password: "{{ lookup('ansible.builtin.password', '/tmp/final-project/grafana_password', chars=['ascii_letters', 'digits', 'punctuation'], length=20) }}"
+    borg_passwd: "{{ lookup('ansible.builtin.password', '/tmp/final-project/borg_passwd', chars=['ascii_letters', 'digits'], length=20) }}"
+    syslog_password: "{{ lookup('ansible.builtin.password', '/tmp/final-project/syslog_password', chars=['ascii_letters', 'digits', 'punctuation'], length=20) }}"
     auth_key: "{{ lookup('ansible.builtin.password', '/tmp/final-project/auth_key', chars=['ascii_letters', 'digits', 'punctuation'], length=64) }}"
     secure_auth_key: "{{ lookup('ansible.builtin.password', '/tmp/final-project/secure_auth_key', chars=['ascii_letters', 'digits', 'punctuation'], length=64) }}"
     logged_in_key: "{{ lookup('ansible.builtin.password', '/tmp/final-project/logged_in_key', chars=['ascii_letters', 'digits', 'punctuation'], length=64) }}"
@@ -38,12 +38,10 @@
     secure_auth_salt: "{{ lookup('ansible.builtin.password', '/tmp/final-project/secure_auth_salt', chars=['ascii_letters', 'digits', 'punctuation'], length=64) }}"
     logged_in_salt: "{{ lookup('ansible.builtin.password', '/tmp/final-project/logged_in_salt', chars=['ascii_letters', 'digits', 'punctuation'], length=64) }}"
     nonce_salt: "{{ lookup('ansible.builtin.password', '/tmp/final-project/nonce_salt', chars=['ascii_letters', 'digits', 'punctuation'], length=64) }}"
-    grafana_api_key: "{{ lookup('ansible.builtin.password', '/tmp/final-project/grafana_api_key', chars=['ascii_letters', 'digits', 'punctuation'], length=64) }}"
     delegate_to: "{{ ansible_play_hosts }}"
     run_once: yes
 
-
-- name: Install Prometheus collection role
+- name: Install Prometheus collection
   become: false
   community.general.ansible_galaxy_install:
       name: prometheus.prometheus
@@ -70,7 +68,7 @@
 #       - "{{ mysql_root_password }}"
 #       - "{{ db_user_pass }}"
 #       - "{{ borg_passwd }}"
-#       - "{{ grafana_password }}"
+#       - "{{ syslog_password }}"
 #       - "{{ auth_key }}"
 #       - "{{ secure_auth_key }}"
 #       - "{{ logged_in_key }}"
@@ -79,6 +77,5 @@
 #       - "{{ secure_auth_salt }}"
 #       - "{{ logged_in_salt }}"
 #       - "{{ nonce_salt }}"
-#       - "{{ grafana_api_key }}"
 
 ...

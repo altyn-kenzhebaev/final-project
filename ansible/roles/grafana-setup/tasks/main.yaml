@@ -11,7 +11,7 @@
   yum:
     name: /root/grafana-enterprise-10.1.2-1.x86_64.rpm
     disable_gpg_check: true
-    state: latest
+    state: present
 
 - name: "Grafana systemd"
   service:

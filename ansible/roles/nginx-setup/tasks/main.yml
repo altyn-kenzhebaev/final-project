@@ -47,8 +47,6 @@
     - 9090/tcp
     - 9093/tcp
     - 3000/tcp
-  tags:
-    - firew_config
 
 - name: Set up forward packages across routers
   sysctl:

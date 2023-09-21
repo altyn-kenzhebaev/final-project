@@ -1,0 +1,15 @@
+global(workDirectory="/var/lib/rsyslog")
+module(load="builtin:omfile" Template="RSYSLOG_TraditionalFileFormat")
+include(file="/etc/rsyslog.d/*.conf" mode="optional")
+module(load="imuxsock"
+       SysSock.Use="off")
+module(load="imjournal"
+       StateFile="imjournal.state")
+*.info;mail.none;authpriv.none;cron.none                /var/log/messages
+authpriv.*                                              /var/log/secure
+mail.*                                                  -/var/log/maillog
+cron.*                                                  /var/log/cron
+*.emerg                                                 :omusrmsg:*
+uucp,news.crit                                          /var/log/spooler
+local7.*                                                /var/log/boot.log
+*.*                         action(type="omfwd" target="{{ syslog_ip }}" port="10514" protocol="udp" template="json-template")

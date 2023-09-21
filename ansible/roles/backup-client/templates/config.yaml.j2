@@ -3,6 +3,8 @@ source_directories:
 {% if ansible_hostname == node1 %}
     - /root/pcs-backups
     - /var/www/html
+{% elif ansible_hostname == syslog_server %}
+    - /var/log
 {% endif %}
 
 repositories:

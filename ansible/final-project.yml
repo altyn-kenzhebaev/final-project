@@ -22,7 +22,7 @@
   tags: mysql-config
 
 - name: Install Prometheus monitoring and alerting server
-  hosts: nginx
+  hosts: frontend
   become: true
   roles:
     - nginx-setup
@@ -40,12 +40,28 @@
     - webserver-config
   tags: beckend-setup
 
+- name: "Install and configure Syslog server"
+  hosts: syslog_servers
+  become: true
+  roles:
+    - syslog-setup
+  tags: syslog-setup
+
 - name: "Install and configure servers for BackupClient"
-  hosts: client_servers
+  hosts: final_project_hosts
   become: true
   roles:
     - backup-client
     - prometheus.prometheus.node_exporter
   tags: client_servers
 
+- name: "Cleaning up hosted_machine"
+  hosts: hosted_machine
+  become: true
+  tasks:
+    - name: Delete tmp dir
+      ansible.builtin.file:
+        path: /tmp/final-project/
+        state: absent
+  tags: clean-tmp
 ...
