@@ -12,11 +12,19 @@ http {
                       '$status $body_bytes_sent "$http_referer" '
                       '"$http_user_agent" "$http_x_forwarded_for"';
     access_log syslog:server={{ syslog_ip }}:514,tag=nginx_access,severity=info combined;
+
     server {
-        listen 80;
+    listen 80 default_server;
+    server_name _;
+    return 301 https://$host$request_uri;
+    }
 
-        server_name localhost;
-
+    server {
+        listen 443 ssl;
+        ssl on;
+        server_name _;
+        ssl_certificate /etc/nginx/cert.pem;
+        ssl_certificate_key /etc/nginx/cert.key;
         location / {
                proxy_pass http://{{ clusterip }}:{{ backend_port }};
                proxy_set_header Host $http_host;

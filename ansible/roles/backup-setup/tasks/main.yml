@@ -35,19 +35,19 @@
     state: directory
     mode: 0750
 
-- name: "Task for creating DRBD volume group with possible sda"
+- name: "Task for creating Backup volume group with possible sda"
   community.general.lvg:
     vg: "{{ borg_vg }}"
     pvs: /dev/sda
   when: ansible_devices.sda.partitions.sda1 is not defined
 
-- name: "Task for creating DRBD volume group with possible sdb"
+- name: "Task for creating Backup volume group with possible sdb"
   community.general.lvg:
     vg: "{{ borg_vg }}"
     pvs: /dev/sdb
   when: ansible_devices.sdb.partitions.sdb1 is not defined
 
-- name: "Task for creating DRBD logical volume"
+- name: "Task for creating Backup logical volume"
   community.general.lvol:
     vg: "{{ borg_vg }}"
     lv:  "{{ borg_lv }}"

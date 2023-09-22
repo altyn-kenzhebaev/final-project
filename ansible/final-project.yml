@@ -51,6 +51,7 @@
   hosts: final_project_hosts
   become: true
   roles:
+    - syslog-client
     - backup-client
     - prometheus.prometheus.node_exporter
   tags: client_servers

@@ -1,0 +1,11 @@
+---
+- name: Debug
+  hosts: hosted_machine
+  tasks:
+    - name: debuggin variable
+      debug:
+        msg:
+          - chat_id: "{{ chat_id }}"
+          - "{{ chat_id|combine({'int': chat_id|int}) }}"
+
+...

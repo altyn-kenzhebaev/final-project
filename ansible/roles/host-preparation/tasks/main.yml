@@ -39,52 +39,6 @@
     group: root
     mode: 0644
 
-- name: Append json-template to rsyslog
-  copy:
-    dest: /etc/rsyslog.d/json-template.conf
-    src: json-template.conf
-    owner: root
-    group: root
-    mode: 0644
-
-- name: Configure to send logs
-  template:
-    src: rsyslog.conf.j2
-    dest: /etc/rsyslog.conf
-  notify:
-    - restart rsyslog
-
-- name: Configure AUDITD rules
-  copy:
-    dest: /etc/audit/audit.rules
-    src: audit.rules
-    owner: root
-    group: root
-    mode: 0640
-
-- name: Configure AUDITD
-  copy:
-    dest: /etc/audit/auditd.conf
-    src: auditd.conf
-    owner: root
-    group: root
-    mode: 0640
-
-- name: Configure AUDITD plugin to send auditd logs
-  copy:
-    dest: /etc/audit/plugins.d/au-remote.conf
-    src: au-remote.conf
-    owner: root
-    group: root
-    mode: 0640
-
-- name: Configure to send audit logs
-  template:
-    src: audisp-remote.conf.j2
-    dest: /etc/audit/audisp-remote.conf
-  notify:
-    - restart auditd
-
 - name: "Enable interconnect ports for Prometheus server"
   ansible.posix.firewalld:
     rich_rule: 'rule family="ipv4" source address="{{ frontend_loc_ip }}" port port="9100" protocol="tcp" accept'
