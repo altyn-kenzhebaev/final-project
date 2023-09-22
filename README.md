@@ -1,5 +1,5 @@
 # Проектная работа
-Для поднятия данной проектной работы в виде небольшой инфраструктуры требуется установить (у меня развернута Ubuntu 22.04, дальнейшие действия на раозворачивающимся хосте будут выполнено для Ubuntu):
+Для поднятия данной проектной работы в виде небольшой инфраструктуры требуется установить (для Ubuntu 22.04):
 1. Установить и настроить сеть на Virtualbox 7.0:
 ```
 wget -O- https://www.virtualbox.org/download/oracle_vbox_2016.asc | sudo gpg --dearmor --yes --output /usr/share/keyrings/oracle-virtualbox-2016.gpg
@@ -14,9 +14,9 @@ wget -O- https://apt.releases.hashicorp.com/gpg | gpg --dearmor | sudo tee /usr/
 echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
 sudo apt update && sudo apt install vagrant
 ```
-3. Установить git:
+3. Установить git и openssh-server:
 ```
-sudo apt update && sudo apt install git
+sudo apt update && sudo apt install git openssh-server
 ```
 Копируем разворачиваемую проекную работу с моего репозитория git:
 ```
@@ -37,7 +37,7 @@ mkdir /home/altynbek/Otus-homeworks/final-project/ansible/roles/backup-setup/fil
 mv /home/altynbek/Otus-homeworks/final-project/ansible/roles/backup-client/files/private_key.pub /home/altynbek/Otus-homeworks/final-project/ansible/roles/backup-setup/files/authorized_keys
 sed -i '1s/./command\=\"borg serve \-\-restrict\-to\-path \/var\/backup"\,restrict\ &/' /home/altynbek/Otus-homeworks/final-project/ansible/roles/backup-setup/files/authorized_keys
 ```
-5. В целях легокого развертывания ВМ проектной предварительно скачиваем весомые пакеты ПО:
+5. В целях легкого развертывания ВМ проектной работы предварительно скачиваем весомые пакеты ПО:
 ```
 mkdir /home/altynbek/Otus-homeworks/final-project/ansible/roles/grafana-setup/files/
 wget -O /home/altynbek/Otus-homeworks/final-project/ansible/roles/grafana-setup/files/grafana-enterprise-10.1.2-1.x86_64.rpm https://dl.grafana.com/enterprise/release/grafana-enterprise-10.1.2-1.x86_64.rpm

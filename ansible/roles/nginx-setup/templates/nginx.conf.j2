@@ -16,15 +16,15 @@ http {
     server {
     listen 80 default_server;
     server_name _;
-    return 301 https://$host$request_uri;
-    }
+#    return 301 https://$host$request_uri;
+#    }
 
-    server {
-        listen 443 ssl;
-        ssl on;
-        server_name _;
-        ssl_certificate /etc/nginx/cert.pem;
-        ssl_certificate_key /etc/nginx/cert.key;
+#    server {
+#        listen 443 ssl;
+#        ssl on;
+#        server_name _;
+#        ssl_certificate /etc/nginx/cert.pem;
+#        ssl_certificate_key /etc/nginx/cert.key;
         location / {
                proxy_pass http://{{ clusterip }}:{{ backend_port }};
                proxy_set_header Host $http_host;
