@@ -41,41 +41,4 @@
     delegate_to: "{{ ansible_play_hosts }}"
     run_once: yes
 
-- name: Install Prometheus collection
-  become: false
-  community.general.ansible_galaxy_install:
-      name: prometheus.prometheus
-      type: collection
-  delegate_to: hosted_machine
-  run_once: yes
-
-- name: Edit for current version compatabilty
-  ansible.builtin.lineinfile:
-    path: /home/altynbek/.ansible/collections/ansible_collections/prometheus/prometheus/meta/runtime.yml
-    regexp: '^requires_ansible:'
-    line: 'requires_ansible: "~=2.15.0"'
-  delegate_to: hosted_machine
-  run_once: yes
-  tags: 
-    - edit_file
-
-# - name: Prompt vars
-#   debug:
-#     msg:
-#       - "{{ node1_plug }}"
-#       - "{{ node2_plug }}"
-#       - "{{ pcm_password }}"
-#       - "{{ mysql_root_password }}"
-#       - "{{ db_user_pass }}"
-#       - "{{ borg_passwd }}"
-#       - "{{ syslog_password }}"
-#       - "{{ auth_key }}"
-#       - "{{ secure_auth_key }}"
-#       - "{{ logged_in_key }}"
-#       - "{{ nonce_key }}"
-#       - "{{ auth_salt }}"
-#       - "{{ secure_auth_salt }}"
-#       - "{{ logged_in_salt }}"
-#       - "{{ nonce_salt }}"
-
 ...
