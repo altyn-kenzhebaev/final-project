@@ -1,5 +1,6 @@
 <VirtualHost *:{{ backend_port }}>
 DocumentRoot /var/www/html/wordpress
+SetEnvIf X-Forwarded-Proto "^https$" HTTPS=on
 <Directory /var/www/html/wordpress/>
         Options FollowSymlinks
         AllowOverride All

@@ -9,6 +9,12 @@
     name: 'https://www.elrepo.org/elrepo-release-9.el9.elrepo.noarch.rpm'
     state: present
 
+- name: Temporary unavailable Elrepo mirrorlist
+  ansible.builtin.lineinfile:
+    path: /etc/yum.repos.d/elrepo.repo
+    regexp: '^mirrorlist='
+    state: absent
+
 - name: "Add ResilientStorage repo"
   yum_repository:
     name: resilientstorage
@@ -19,6 +25,23 @@
     gpgcheck: 1
     gpgkey: file:///etc/pki/rpm-gpg/RPM-GPG-KEY-AlmaLinux-9
     metadata_expire: 86400
+
+- name: "Install DRBD packages"
+  yum:
+    name: "{{ packages }}"
+    state: latest
+  vars:
+    packages:
+    - kernel
+
+- name: Reboot host and wait for it to restart
+  reboot:
+    msg: "Reboot initiated by Ansible"
+    connect_timeout: 5
+    reboot_timeout: 600
+    pre_reboot_delay: 0
+    post_reboot_delay: 30
+    test_command: whoami
 
 - name: "Install DRBD packages"
   yum:
@@ -105,11 +128,11 @@
     group: root
     mode: 0640
 
-- name: "Add the DRBD module and make sure it is loaded after reboots"
-  community.general.modprobe:
-    name: drbd
-    state: present
-    persistent: present
+# - name: "Add the DRBD module and make sure it is loaded after reboots"
+#   community.general.modprobe:
+#     name: drbd
+#     state: present
+#     persistent: present
 
 - name: "Initialize DRBD"
   command: "{{ item }}"

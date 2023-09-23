@@ -95,3 +95,5 @@ VM, run `vagrant status NAME`.
 cd ansible
 ansible-playbook final-project.yml --vault-password-file /home/altynbek/Otus-homeworks/final-project/.vault_pass.txt
 ```
+#Proverka
+curl -XGET -u elastic:o-MSyhsim47gLFvT1Qmx 'https://10.10.0.200:9200/_all/_search?q=*&pretty' -k 

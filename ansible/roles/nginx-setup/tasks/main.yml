@@ -19,6 +19,10 @@
     privatekey_path: /etc/nginx/cert.key
     provider: selfsigned
 
+- name: Generate Diffie-Hellman parameters with the default size (4096 bits)
+  community.crypto.openssl_dhparam:
+    path: /etc/nginx/dhparams.pem
+
 - name: "Configure NGINX"
   template:
     dest: /etc/nginx/nginx.conf
