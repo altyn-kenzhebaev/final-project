@@ -1,4 +1,9 @@
 ---
+- name: Check for replay (/opt/storage_config exists)
+  stat:
+    path: /opt/storage_config
+  register: storage_config_done
+
 - name: "Add Elrepo gpg key"
   rpm_key:
     state: present
@@ -26,13 +31,18 @@
     gpgkey: file:///etc/pki/rpm-gpg/RPM-GPG-KEY-AlmaLinux-9
     metadata_expire: 86400
 
-- name: "Install DRBD packages"
+- name: "Install Kernel update packages"
   yum:
     name: "{{ packages }}"
     state: latest
   vars:
     packages:
     - kernel
+
+- name: check to see if we need a reboot
+  command: needs-restarting -r
+  register: result
+  ignore_errors: yes
 
 - name: Reboot host and wait for it to restart
   reboot:
@@ -42,6 +52,7 @@
     pre_reboot_delay: 0
     post_reboot_delay: 30
     test_command: whoami
+  when: result.rc == 1
 
 - name: "Install DRBD packages"
   yum:
@@ -140,6 +151,8 @@
   with_items:
     - "drbdadm create-md --force wwwdata"
     - "drbdadm up wwwdata"
+  when:
+    - storage_config_done.stat.exists != True
 
 - name: "End initialization of DRBD"
   command: "{{ item }}"
@@ -147,6 +160,7 @@
     - "drbdadm primary --force wwwdata"
   when:
     - "ansible_hostname == node1"
+    - storage_config_done.stat.exists != True
 
 - name: "Configure cluster for DRBD and GFS"
   command: "{{ item }}"
@@ -168,4 +182,9 @@
     - "pcs resource cleanup"
   when:
     - "ansible_hostname == node1"
+    - storage_config_done.stat.exists != True
+
+- name: Wait a bit
+  pause:
+    seconds: 10
 ...

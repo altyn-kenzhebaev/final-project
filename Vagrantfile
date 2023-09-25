@@ -41,7 +41,7 @@ MACHINES = {
     :pcmk1 => {
         :box_name => "almalinux/9",
         :cpus => 2,
-        :memory => 1280,
+        :memory => 1536,
         :disks => {
             :sata1 => {
                 :dfile => home + '/VirtualBox VMs/pcmk1/sata1.vdi',
@@ -61,7 +61,7 @@ MACHINES = {
     :pcmk2 => {
         :box_name => "almalinux/9",
         :cpus => 2,
-        :memory => 1280,
+        :memory => 1536,
         :disks => {
             :sata1 => {
                 :dfile => home + '/VirtualBox VMs/pcmk2/sata1.vdi',
@@ -111,7 +111,7 @@ Vagrant.configure("2") do |config|
       if boxname.to_s == 'nginx'
         box.vm.network "private_network", adapter: boxconfig[:net_adp], ip: boxconfig[:ip_addr]
       end
-
+ 
       box.vm.provider :virtualbox do |vb|
         vb.name = boxname.to_s
         vb.memory = boxconfig[:memory]

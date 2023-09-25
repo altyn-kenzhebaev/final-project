@@ -1,4 +1,9 @@
 ---
+- name: Check for replay (/opt/backup_client exists)
+  stat:
+    path: /opt/backup_client
+  register: backup_client_done
+
 - name: "Install BORGBACKUP package"
   yum:
     name: "{{ packages }}"

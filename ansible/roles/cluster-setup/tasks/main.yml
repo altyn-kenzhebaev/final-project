@@ -1,4 +1,8 @@
 ---
+- name: Check for replay (/opt/cluster_setup exists)
+  stat:
+    path: /opt/cluster_setup
+  register: cluster_setup_done
 
 - name: "Add High Availability repo"
   yum_repository:
@@ -74,6 +78,7 @@
     - "pcs cluster start --all"
   when:
     - "ansible_hostname == node1"
+    - cluster_setup_done.stat.exists != True
 
 - name: "Install Additional Fence Agent packages"
   yum:
@@ -130,6 +135,7 @@
     - "pcs property set stonith-enabled=true"
   when:
     - "ansible_hostname == node1"
+    - cluster_setup_done.stat.exists != True
 
 - name: "Copy httpd conf file"
   copy:
@@ -151,4 +157,9 @@
     - "pcs constraint location WebSite prefers {{ node2 }}=50"
   when:
     - "ansible_hostname == node1"
+    - cluster_setup_done.stat.exists != True
+
+- name: Wait a bit
+  pause:
+    seconds: 10
 ...

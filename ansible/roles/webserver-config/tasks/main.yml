@@ -1,4 +1,9 @@
 ---
+- name: Check for replay (/opt/webserver_config exists)
+  stat:
+    path: /opt/webserver_config
+  register: webserver_config_done
+
 - name: "Install PHP"
   yum:
     name: "{{ packages }}"
@@ -49,6 +54,7 @@
     setype: httpd_sys_rw_content_t
   when:
     - "ansible_hostname == node1"
+    - webserver_config_done.stat.exists != True
 
 - name: "Allow httpd to connect remote database on SELinux"
   seboolean:

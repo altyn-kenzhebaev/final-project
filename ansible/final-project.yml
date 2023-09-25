@@ -56,13 +56,13 @@
     - prometheus.prometheus.node_exporter
   tags: client_servers
 
-- name: "Cleaning up hosted_machine"
-  hosts: hosted_machine
-  become: true
-  tasks:
-    - name: Delete tmp dir
-      ansible.builtin.file:
-        path: /tmp/final-project/
-        state: absent
-  tags: clean-tmp
+# - name: "Cleaning up hosted_machine"
+#   hosts: hosted_machine
+#   become: true
+#   tasks:
+#     - name: Delete tmp dir
+#       ansible.builtin.file:
+#         path: /tmp/final-project/
+#         state: absent
+#   tags: clean-tmp
 ...
