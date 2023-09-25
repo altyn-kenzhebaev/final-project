@@ -170,3 +170,14 @@ ansible-playbook final-project.yml --vault-password-file /home/altynbek/Otus-hom
 -   Переходим на root `sudo -i`
 -   Запрос на просмотр логов: curl -XGET -u elastic:'PASSWORD' 'https://10.10.0.200:9200/_all/_search?q=*&pretty' -k 
 ![](screens/elk_logstash.png)
+# Используемые материалы при работе над проектной работой
+- https://clusterlabs.org/pacemaker/doc/2.1/Clusters_from_Scratch/singlehtml/index.html
+- https://www.youtube.com/watch?v=PWNOGs8Jyik
+- https://linbit.com/blog/using-fencing-in-pacemaker-clusters-on-virtualbox-hypervisors/
+- https://www.linuxtuto.com/how-to-install-wordpress-on-almalinux-9/
+- https://github.com/marcindulak/vagrant-sbd-tutorial-centos7/blob/master/sbd_build.sh
+- https://velenux.wordpress.com/2022/09/12/how-to-configure-prometheus-alertmanager-to-send-alerts-to-telegram/
+- https://maivankhanh.medium.com/configure-nginx-to-host-both-backend-and-frontend-servers-in-one-aws-ec2-instance-and-can-be-6da9ff442435
+- https://github.com/cloudalchemy/ansible-prometheus
+- https://gist.github.com/pedrouid/4abcc16c0218a46a577cfa8186cb845d
+- https://serverfault.com/questions/1075339/force-apache-to-treat-http-as-https-with-cloudfront-ssl-tls
