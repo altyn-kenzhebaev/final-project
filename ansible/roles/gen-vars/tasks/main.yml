@@ -20,6 +20,7 @@
   ignore_errors: true
   delegate_to: hosted_machine
   run_once: yes
+  no_log: true
 
 - name: generating passwords for final-project
   ansible.builtin.set_fact:
@@ -27,6 +28,7 @@
     node2_plug: "{{ node2_plug_output.stdout }}"
     pcm_password: "{{ lookup('ansible.builtin.password', '/tmp/final-project/pcm_password', chars=['ascii_letters', 'digits'], length=20) }}"
     mysql_root_password: "{{ lookup('ansible.builtin.password', '/tmp/final-project/mysql_root_password', chars=['ascii_letters', 'digits'], length=20) }}"
+    repl_mysql_password: "{{ lookup('ansible.builtin.password', '/tmp/final-project/repl_mysql_password', chars=['ascii_letters', 'digits'], length=20) }}"
     db_user_pass: "{{ lookup('ansible.builtin.password', '/tmp/final-project/db_user_pass', chars=['ascii_letters', 'digits'], length=20) }}"
     borg_passwd: "{{ lookup('ansible.builtin.password', '/tmp/final-project/borg_passwd', chars=['ascii_letters', 'digits'], length=20) }}"
     syslog_password: "{{ lookup('ansible.builtin.password', '/tmp/final-project/syslog_password', chars=['ascii_letters', 'digits'], length=20) }}"

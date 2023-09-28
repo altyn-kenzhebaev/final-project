@@ -81,7 +81,7 @@ MACHINES = {
     :syslog => {
         :box_name => "almalinux/9",
         :cpus => 2,
-        :memory => 4096,
+        :memory => 5120,
         :nets => {
             :net2 => {
               :ip => '10.10.0.200',
@@ -112,6 +112,10 @@ Vagrant.configure("2") do |config|
         box.vm.network "private_network", adapter: boxconfig[:net_adp], ip: boxconfig[:ip_addr]
       end
  
+      if boxname.to_s == 'syslog'
+        box.vm.network "forwarded_port", guest: 5601, host: 5601
+      end
+
       box.vm.provider :virtualbox do |vb|
         vb.name = boxname.to_s
         vb.memory = boxconfig[:memory]

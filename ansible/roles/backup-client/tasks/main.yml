@@ -1,7 +1,7 @@
 ---
-- name: Check for replay (/opt/backup_client exists)
+- name: Check for replay (/opt/backup_client_done exists)
   stat:
-    path: /opt/backup_client
+    path: /opt/backup_client_done
   register: backup_client_done
 
 - name: "Add CRB repo"
@@ -173,4 +173,13 @@
   when:
     - backup_client_done.stat.exists != True
 
+- name: Set replay protection (/opt/backup_client_done)
+  file:
+    path: /opt/backup_client_done
+    state: touch
+    owner: root
+    group: root
+    mode: '0744'
+  when:
+    - backup_client_done.stat.exists != True
 ...

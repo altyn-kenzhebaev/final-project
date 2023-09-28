@@ -5,4 +5,5 @@ ansible/roles/backup-client/files/private_key
 ansible/roles/backup-setup/files/authorized_keys
 ansible/roles/syslog-setup/files/elasticsearch-8.10.1-x86_64.rpm
 ansible/roles/syslog-setup/files/logstash-8.10.1-x86_64.rpm
+ansible/roles/syslog-setup/files/kibana-8.10.1-x86_64.rpm
 ansible/roles/grafana-setup/files/grafana-enterprise-10.1.2-1.x86_64.rpm

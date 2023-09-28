@@ -1,7 +1,7 @@
 ---
-- name: Check for replay (/opt/cluster_setup exists)
+- name: Check for replay (/opt/cluster_setup_done exists)
   stat:
-    path: /opt/cluster_setup
+    path: /opt/cluster_setup_done
   register: cluster_setup_done
 
 - name: "Add High Availability repo"
@@ -42,6 +42,8 @@
     create_home: yes
   notify: "restart pcsd"
   no_log: true
+  when:
+    - cluster_setup_done.stat.exists != True
 
 - name: flush
   ansible.builtin.meta: flush_handlers
@@ -69,7 +71,7 @@
   with_items:
     - high-availability
 
-- name: "Configuring cluster"
+- name: "Configuring cluster step 1"
   command: "{{ item }}"
   with_items:
     - "pcs host auth {{ node1 }} {{ node2 }} -u hacluster -p {{ pcm_password }}"
@@ -125,18 +127,6 @@
     group: root
     mode: 0400
 
-- name: "Configure fencing nodes"
-  command: "{{ item }}"
-  with_items:
-    - "pcs stonith create st_{{ node1 }} fence_vbox ip={{ hosted_machine }} username=altynbek identity_file=/root/private_key plug={{ node1_plug }} pcmk_host_list={{ node1 }}"
-    - "pcs stonith create st_{{ node2 }} fence_vbox ip={{ hosted_machine }} username=altynbek identity_file=/root/private_key plug={{ node2_plug }} pcmk_host_list={{ node2 }}"
-    - "pcs constraint location st_{{ node1 }} avoids {{ node1 }}"
-    - "pcs constraint location st_{{ node2 }} avoids {{ node2 }}"
-    - "pcs property set stonith-enabled=true"
-  when:
-    - "ansible_hostname == node1"
-    - cluster_setup_done.stat.exists != True
-
 - name: "Copy httpd conf file"
   copy:
     dest: /etc/httpd/conf.d/status.conf
@@ -145,9 +135,14 @@
     group: root
     mode: 0644
 
-- name: "Configuring cluster"
+- name: "Configuring cluster step 2"
   command: "{{ item }}"
   with_items:
+    - "pcs stonith create st_{{ node1 }} fence_vbox ip={{ hosted_machine }} username=altynbek identity_file=/root/private_key plug={{ node1_plug }} pcmk_host_list={{ node1 }}"
+    - "pcs stonith create st_{{ node2 }} fence_vbox ip={{ hosted_machine }} username=altynbek identity_file=/root/private_key plug={{ node2_plug }} pcmk_host_list={{ node2 }}"
+    - "pcs constraint location st_{{ node1 }} avoids {{ node1 }}"
+    - "pcs constraint location st_{{ node2 }} avoids {{ node2 }}"
+    - "pcs property set stonith-enabled=true"
     - "pcs resource create ClusterIP ocf:heartbeat:IPaddr2 ip={{ clusterip }} cidr_netmask=24 op monitor interval=30s"
     - "pcs resource defaults update resource-stickiness=100"
     - "pcs resource create WebSite ocf:heartbeat:apache configfile=/etc/httpd/conf/httpd.conf statusurl='http://localhost/server-status' op monitor interval=1min"
@@ -157,6 +152,16 @@
     - "pcs constraint location WebSite prefers {{ node2 }}=50"
   when:
     - "ansible_hostname == node1"
+    - cluster_setup_done.stat.exists != True
+
+- name: Set replay protection (/opt/cluster_setup_done)
+  file:
+    path: /opt/cluster_setup_done
+    state: touch
+    owner: root
+    group: root
+    mode: '0744'
+  when:
     - cluster_setup_done.stat.exists != True
 
 - name: Wait a bit

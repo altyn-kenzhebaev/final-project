@@ -1,7 +1,7 @@
 ---
-- name: Check for replay (/opt/storage_config exists)
+- name: Check for replay (/opt/storage_config_done exists)
   stat:
-    path: /opt/storage_config
+    path: /opt/storage_config_done
   register: storage_config_done
 
 - name: "Add Elrepo gpg key"
@@ -38,6 +38,7 @@
   vars:
     packages:
     - kernel
+    - yum-utils
 
 - name: check to see if we need a reboot
   command: needs-restarting -r
@@ -52,6 +53,7 @@
     pre_reboot_delay: 0
     post_reboot_delay: 30
     test_command: whoami
+  throttle: 1
   when: result.rc == 1
 
 - name: "Install DRBD packages"
@@ -165,7 +167,7 @@
 - name: "Configure cluster for DRBD and GFS"
   command: "{{ item }}"
   with_items:
-    - "pcs resource create WebData ocf:linbit:drbd drbd_resource=wwwdata op monitor interval=29s role=Promoted monitor interval=31s role=Unpromoted promotable promoted-max=1 promoted-node-max=1 clone-max=2 clone-node-max=1 notify=true"
+    - "pcs resource create WebData ocf:linbit:drbd drbd_resource=wwwdata op monitor interval=29s role=Promoted monitor interval=31s role=Unpromoted promotable promoted-max=2 promoted-node-max=1 clone-max=2 clone-node-max=1 notify=true"
     - "mkfs.gfs2 -p lock_dlm -j 2 -t {{ cluster_name }}:web /dev/{{ drbd_lv }} -O -q"
     - "pcs resource create WebFS Filesystem device=/dev/{{ drbd_lv }} directory='/var/www/html' fstype='gfs2'"
     - "pcs constraint colocation add WebFS with Promoted WebData-clone"
@@ -176,12 +178,21 @@
     - "pcs resource clone dlm clone-max=2 clone-node-max=1"
     - "pcs constraint colocation add WebFS with dlm-clone"
     - "pcs constraint order dlm-clone then WebFS"
-    - "pcs property set no-quorum-policy=freeze"
     - "pcs resource clone WebFS"
-    - "pcs resource update WebData-clone promoted-max=2"
+    - "pcs property set no-quorum-policy=freeze"
     - "pcs resource cleanup"
   when:
     - "ansible_hostname == node1"
+    - storage_config_done.stat.exists != True
+
+- name: Set replay protection (/opt/storage_config_done)
+  file:
+    path: /opt/storage_config_done
+    state: touch
+    owner: root
+    group: root
+    mode: '0744'
+  when:
     - storage_config_done.stat.exists != True
 
 - name: Wait a bit

@@ -1,0 +1,14 @@
+[mysqld]
+datadir=/var/lib/mysql
+socket=/var/lib/mysql/mysql.sock
+log-error=/var/log/mariadb/mariadb.log
+pid-file=/run/mariadb/mariadb.pid
+
+{% if ansible_hostname == master_db_server %}
+server-id = 1
+log-bin
+log-basename=master1
+binlog-format=mixed
+{% elif ansible_hostname == slave_db_server %}
+server-id = 2
+{% endif %}

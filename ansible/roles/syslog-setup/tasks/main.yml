@@ -1,4 +1,9 @@
 ---
+- name: Check for replay (/opt/syslog_config_done exists)
+  stat:
+    path: /opt/syslog_config_done
+  register: syslog_config_done
+
 - name: "Add Elasticsearch repository for 8.x packages"
   yum_repository:
     name: elasticsearch
@@ -18,6 +23,9 @@
   with_items:
     - elasticsearch-8.10.1-x86_64.rpm
     - logstash-8.10.1-x86_64.rpm
+    - kibana-8.10.1-x86_64.rpm
+  when:
+    - syslog_config_done.stat.exists != True
 
 - name: Install ELK
   yum:
@@ -27,6 +35,7 @@
   with_items:
    - /root/elasticsearch-8.10.1-x86_64.rpm
    - /root/logstash-8.10.1-x86_64.rpm
+   - /root/kibana-8.10.1-x86_64.rpm
 
 - name: "Configure ELK"
   template:
@@ -49,18 +58,24 @@
 - name: Reset elastic password
   shell: /usr/share/elasticsearch/bin/elasticsearch-reset-password -u elastic -b
   register: reset_passwd_out
+  when:
+    - syslog_config_done.stat.exists != True
 
 - name: Setting password to variable
   ansible.builtin.set_fact:
     elastic_passwd: "{{ reset_passwd_out.stdout | regex_replace('.*\n.*value\\: ', '') }}"
+  when:
+    - syslog_config_done.stat.exists != True
 
 - name: Create elastic_passwd cred file
   copy:
-    content: "{{ elastic_passwd }}"
+    content: "{{ elastic_passwd }}\n"
     dest: /root/elastic_passwd
     owner: root
     group: root
     mode: 0400
+  when:
+    - syslog_config_done.stat.exists != True
 
 - name: "Configure Logstash"
   template:
@@ -71,6 +86,8 @@
     mode: 0644
   notify:
     - restart logstash
+  when:
+    - syslog_config_done.stat.exists != True
 
 - name: "Logstash systemd"
   service:
@@ -79,6 +96,46 @@
     state: started
   with_items:
     - logstash
+
+- name: Update Kibana Configuration File
+  lineinfile:
+    path: /etc/kibana/kibana.yml
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+  loop:
+    - { regexp: '^server\.host:', line: 'server.host: "{{ syslog_ip }}"' }
+    - { regexp: '^server\.port:', line: 'server.port: {{ kibana_ui_port }}' }
+  notify:
+    - restart kibana
+
+- name: Run Elasticsearch Create Enrollment Token Command
+  shell: /usr/share/elasticsearch/bin/elasticsearch-create-enrollment-token -s kibana
+  register: token_response
+  when:
+    - syslog_config_done.stat.exists != True
+
+- name: Extract Token from Response
+  set_fact:
+    enrollment_token: "{{ token_response.stdout }}"
+  when:
+    - syslog_config_done.stat.exists != True
+
+- name: Run Kibana Enrollment Token Command
+  shell: /usr/share/kibana/bin/kibana-setup --enrollment-token {{ enrollment_token }}
+  args:
+    stdin: "y\n"
+  notify:
+    - restart kibana
+  when:
+    - syslog_config_done.stat.exists != True
+
+- name: "Kibana systemd"
+  service:
+    name: "{{ item }}"
+    enabled: true
+    state: started
+  with_items:
+    - kibana
 
 - name: "Configuring firewall for ELK ans Logstash"
   ansible.posix.firewalld:
@@ -91,6 +148,7 @@
     - 10514/udp
     - 514/tcp
     - 514/udp
+    - 5601/tcp
 
 - name: Configure RSYSLOG to recieve logs
   copy:
@@ -112,4 +170,13 @@
   notify:
     - restart auditd
 
+- name: Set replay protection (/opt/syslog_config_done)
+  file:
+    path: /opt/syslog_config_done
+    state: touch
+    owner: root
+    group: root
+    mode: '0744'
+  when:
+    - syslog_config_done.stat.exists != True
 ...

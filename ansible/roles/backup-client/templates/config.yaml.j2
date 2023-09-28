@@ -11,7 +11,7 @@ repositories:
     - path: ssh://borg@{{ backup_server_ip }}/var/backup/{{ ansible_hostname }}
       label: backupserver
 
-{% if ansible_hostname == db_server %}
+{% if ansible_hostname == master_db_server %}
 mariadb_databases:
     - name: all
       options: --defaults-extra-file=/root/.my.cnf

@@ -24,3 +24,7 @@ db
 
 [mon_servers:children]
 frontend
+
+[db_servers:children]
+db
+frontend

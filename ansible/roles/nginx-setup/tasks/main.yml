@@ -37,6 +37,13 @@
     state: yes
     persistent: yes
 
+- name: Allow NGINX to listen kibana_ui_port
+  community.general.seport:
+    ports: "{{ kibana_ui_port }}"
+    proto: tcp
+    setype: http_port_t
+    state: present
+
 - name: "Start and enable NGINX"
   systemd:
     name: nginx.service
@@ -63,6 +70,7 @@
     - 9090/tcp
     - 9093/tcp
     - 3000/tcp
+    - "{{ kibana_ui_port }}/tcp"
 
 - name: Set up forward packages across routers
   sysctl:

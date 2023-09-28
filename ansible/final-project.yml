@@ -14,12 +14,18 @@
   tags: host-preparation
 
 - name: "Install and configure Mariadb Server"
-  hosts: db
+  hosts: db_servers
   become: true
   roles:
     - mysql-config
-    - backup-setup
   tags: mysql-config
+
+- name: "Install and configure Borg Backup Server"
+  hosts: backup_servers
+  become: true
+  roles:
+    - backup-setup
+  tags: backup-config
 
 - name: Install Prometheus monitoring and alerting server
   hosts: frontend

@@ -94,6 +94,7 @@ mkdir /home/altynbek/Otus-homeworks/final-project/ansible/roles/grafana-setup/fi
 wget -O /home/altynbek/Otus-homeworks/final-project/ansible/roles/grafana-setup/files/grafana-enterprise-10.1.2-1.x86_64.rpm https://dl.grafana.com/enterprise/release/grafana-enterprise-10.1.2-1.x86_64.rpm
 wget -O /home/altynbek/Otus-homeworks/final-project/ansible/roles/syslog-setup/files/elasticsearch-8.10.1-x86_64.rpm https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-8.10.1-x86_64.rpm
 wget -O /home/altynbek/Otus-homeworks/final-project/ansible/roles/syslog-setup/files/logstash-8.10.1-x86_64.rpm https://artifacts.elastic.co/downloads/logstash/logstash-8.10.1-x86_64.rpm
+wget -O /home/altynbek/Otus-homeworks/final-project/ansible/roles/syslog-setup/files/kibana-8.10.1-x86_64.rpm https://artifacts.elastic.co/downloads/kibana/kibana-8.10.1-x86_64.rpm
 ```
 7. Устанавливаем ansible и коллекцию prometheus:
 ```
@@ -165,11 +166,12 @@ ansible-playbook final-project.yml --vault-password-file /home/altynbek/Otus-hom
 -   интеграция с Prometheus - Home => Administration => Data Sources => Add data sources => Prometheus => URL: localhost:9090 => Save & test
 -   Создание Dashboard - Home => New => Import => Import via grafana.com: 1860 => Load => prometheus: Prometheus => Import
 ![](screens/grafana.png)
-5. Проверка работоспособности syslog сервера, построенного на Elasticsearch и Logstash
+5. Проверка работоспособности syslog сервера, построенного на Elasticsearch, Logstash и Kibana
 -   Заходим на сервер `vagrant ssh syslog`
 -   Переходим на root `sudo -i`
 -   Запрос на просмотр логов: curl -XGET -u elastic:'PASSWORD' 'https://10.10.0.200:9200/_all/_search?q=*&pretty' -k 
 ![](screens/elk_logstash.png)
+![](screens/kibana.png)
 # Используемые материалы при работе над проектной работой
 - https://clusterlabs.org/pacemaker/doc/2.1/Clusters_from_Scratch/singlehtml/index.html
 - https://www.youtube.com/watch?v=PWNOGs8Jyik

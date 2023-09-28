@@ -1,7 +1,7 @@
 ---
-- name: Check for replay (/opt/webserver_config exists)
+- name: Check for replay (/opt/webserver_config_done exists)
   stat:
-    path: /opt/webserver_config
+    path: /opt/webserver_config_done
   register: webserver_config_done
 
 - name: "Install PHP"
@@ -62,10 +62,30 @@
     state: yes
     persistent: yes
 
-- name: "Configure Wordpress"
+- name: "Configure Wordpress step 1"
   template:
     dest: /var/www/html/wordpress/wp-config.php
     src: wp-config.php.j2
+    owner: apache
+    group: apache
+    mode: 0666
+  when:
+    - "ansible_hostname == node1"
+
+- name: "Configure Wordpress step 2"
+  template:
+    dest: /var/www/html/wordpress/db-config.php
+    src: db-config.php.j2
+    owner: apache
+    group: apache
+    mode: 0666
+  when:
+    - "ansible_hostname == node1"
+
+- name: "Configure Wordpress step 3"
+  copy:
+    dest: /var/www/html/wordpress/wp-content/db.php
+    src: db.php
     owner: apache
     group: apache
     mode: 0666
@@ -94,4 +114,14 @@
     - "pcs resource restart WebSite"
   when:
     - "ansible_hostname == node1"
+
+- name: Set replay protection (/opt/webserver_config_done)
+  file:
+    path: /opt/webserver_config_done
+    state: touch
+    owner: root
+    group: root
+    mode: '0744'
+  when:
+    - webserver_config_done.stat.exists != True
 ...

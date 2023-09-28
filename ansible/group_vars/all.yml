@@ -9,11 +9,18 @@ node2_ip: "10.10.0.102"
 nodes_net: "10.10.0.100/255.255.255.252"
 clusterip: "10.10.0.120"
 hosted_machine: "192.168.50.1"
-db_server: "mysql"
-mysql_ip: "10.10.0.110"
+
+master_db_server: "mysql"
+master_mysql_ip: "10.10.0.110"
+
+slave_db_server: "nginx"
+slave_mysql_ip: "10.10.0.10"
+
+mariadb_replication_user: "repl"
 
 syslog_server: "syslog"
 syslog_ip: "10.10.0.200"
+kibana_ui_port: "5601"
 
 db_name: "wordpress_db"
 db_user: "wordpress_user"
@@ -43,7 +50,7 @@ prometheus_targets:
   node:
   - targets:
     - "{{ frontend }}:9100"
-    - "{{ db_server }}:9100"
+    - "{{ master_db_server }}:9100"
     - "{{ node1 }}:9100"
     - "{{ node2 }}:9100"
     - "{{ syslog_server }}:9100"

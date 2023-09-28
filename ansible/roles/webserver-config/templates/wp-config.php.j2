@@ -3,7 +3,8 @@
 define( 'DB_NAME', '{{ db_name }}' );
 define( 'DB_USER', '{{ db_user }}' );
 define( 'DB_PASSWORD', '{{ db_user_pass }}' );
-define( 'DB_HOST', '{{ mysql_ip }}' );
+define( 'DB_HOST', '{{ master_mysql_ip}}' );
+define( 'REPLICA_DB_HOST', '{{ slave_mysql_ip}}' );
 define( 'DB_CHARSET', 'utf8mb4' );
 define( 'DB_COLLATE', '' );
 
