@@ -1,8 +1,9 @@
-# Проектная работа
+# Проектная работа "Развертывание инфрастуктуры с использованием Active/active кластера для работы сайта на Wordpress"
 Для поднятия данной проектной работы в виде небольшой инфраструктуры требуется установить (для Ubuntu 22.04):
 1. Установить и настроить сеть на Virtualbox 7.0:
 ```
 wget -O- https://www.virtualbox.org/download/oracle_vbox_2016.asc | sudo gpg --dearmor --yes --output /usr/share/keyrings/oracle-virtualbox-2016.gpg
+echo "deb [arch=amd64 signed-by=/usr/share/keyrings/oracle-virtualbox-2016.gpg] https://download.virtualbox.org/virtualbox/debian $(lsb_release -cs) contrib" | sudo tee /etc/apt/sources.list.d/vbox.list
 sudo apt-get update
 sudo apt-get install virtualbox-7.0
 sudo vi /etc/vbox/networks.conf
@@ -25,12 +26,12 @@ mkdir Otus-homeworks
 cd Otus-homeworks
 git clone https://github.com/altyn-kenzhebaev/final-project.git
 ```
-4. Прединструкция как был собран fence-agents-vbox-4.12.1-3.el9.noarch.rpm
+4. Прединструкция как был собран fence-agents-vbox-4.12.1-3.el9.noarch.rpm (Данная инструкция была проделена на Almalinux 9)
 В репозиториях almalinux 9 нет данного пакета,поэтому данный пакет был собран из исходных кодов пакета fence-agents-4.12.1-3.fc39.src.rpm. Первым делом скачиваем исходники:
 ```
 curl -o fence-agents-4.12.1-3.fc39.src.rpm https://dl.fedoraproject.org/pub/fedora/linux/development/rawhide/Everything/source/tree/Packages/f/fence-agents-4.12.1-3.fc39.src.rpm
 ```
-Включаем дополнительные репозитории almalinux 9 для скачивания пакетов компеляции из исходников:
+Включаем дополнительные репозитории almalinux 9 для скачивания пакетов для компиляции из исходников:
 ```
 vi /etc/yum.repos.d/almalinux-crb.repo 
 [crb]
@@ -101,11 +102,12 @@ wget -O /home/altynbek/Otus-homeworks/final-project/ansible/roles/syslog-setup/f
 sudo apt update && sudo apt install pip
 pip install ansible
 export PATH=$PATH:/home/altynbek/.local/bin
+ansible-galaxy collection install prometheus.prometheus
 vi /home/altynbek/.ansible/collections/ansible_collections/prometheus/prometheus/meta/runtime.yml
 requires_ansible: "~=2.15.0"
 ```
 8. Разворачиваем телеграм-бот и копируем его bot_token и chat_id, шифруем bot_token, используя ansible-vault и вставляем данные в /home/altynbek/Otus-homeworks/final-project/group_vars/all.yml
-Инструкции по разворачиванию alermanager и телеграм бота:
+Инструкции по разворачиванию alertmanager и телеграм бота:
 https://velenux.wordpress.com/2022/09/12/how-to-configure-prometheus-alertmanager-to-send-alerts-to-telegram/
 ```
 echo 'strong_pass' > /home/altynbek/Otus-homeworks/final-project/.vault_pass.txt
@@ -129,7 +131,7 @@ Vagrantfile
 ```
 # vagrant up
 ```
-Vagrant создает ВМ следующей структурой:
+Vagrant создает ВМ со следующей структурой:
 ```
 # vagrant status
 Current machine states:
@@ -152,7 +154,7 @@ ansible-playbook final-project.yml --vault-password-file /home/altynbek/Otus-hom
 # Проверка работоспособности
 1. Проверяем наш сайт по следующей ссылке: https://192.168.50.100
 ![](screens/site.png)
-2. Проверяем работает ли мониторинг перейдя http://192.168.50.100:9090/targets?search=
+2. Проверяем работает ли мониторинг, перейдя http://192.168.50.100:9090/targets?search=
 ![](screens/prometheus.png)
 3. Проверяем alertmanager с оповещением в telegram:
 -   Заходим на сервер `vagrant ssh nginx`
