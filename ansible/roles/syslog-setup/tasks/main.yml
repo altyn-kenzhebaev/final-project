@@ -137,7 +137,7 @@
   with_items:
     - kibana
 
-- name: "Configuring firewall for ELK ans Logstash"
+- name: "Configuring firewall for ELK, Logstash and Kibana"
   ansible.posix.firewalld:
     port: "{{ item }}"
     permanent: true
@@ -148,7 +148,7 @@
     - 10514/udp
     - 514/tcp
     - 514/udp
-    - 5601/tcp
+    - "{{ kibana_ui_port }}/tcp"
 
 - name: Configure RSYSLOG to recieve logs
   copy:
